@@ -67,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> fetchUsers() async {
-    final String baseUrl =
+    const String baseUrl =
         kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
     try {
       final response = await http.get(Uri.parse('$baseUrl/users'));
@@ -85,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> addUser(String name, String email) async {
-    final String baseUrl =
+    const String baseUrl =
         kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
     try {
       final response = await http.post(
