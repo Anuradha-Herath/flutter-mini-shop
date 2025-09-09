@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
+import 'providers/product_provider.dart';
+import 'providers/cart_provider.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/cart/cart_screen.dart';
+import 'screens/profile/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,148 +15,76 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter App with Backend',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (ctx) => ProductProvider()),
+        ChangeNotifierProvider(create: (ctx) => CartProvider()),
+      ],
+      child: MaterialApp(
+        title: 'E-Commerce App',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const MainScreen(),
+        routes: {
+          '/home': (ctx) => const HomeScreen(),
+          '/cart': (ctx) => const CartScreen(),
+          '/profile': (ctx) => const ProfileScreen(),
+        },
       ),
-      home: const MyHomePage(title: 'Users'),
     );
   }
 }
 
-class User {
-  final String id;
-  final String name;
-  final String email;
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
 
-  User({required this.id, required this.name, required this.email});
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['_id'],
-      name: json['name'],
-      email: json['email'],
-    );
-  }
+  @override
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class _MainScreenState extends State<MainScreen> {
+  int _selectedIndex = 0;
 
-  final String title;
+  static const List<String> _titles = ['Home', 'Cart', 'Profile'];
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+  static const List<Widget> _screens = [
+    HomeScreen(),
+    CartScreen(),
+    ProfileScreen(),
+  ];
 
-class _MyHomePageState extends State<MyHomePage> {
-  List<User> _users = [];
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    fetchUsers();
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    super.dispose();
-  }
-
-  Future<void> fetchUsers() async {
-    const String baseUrl =
-        kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/users'));
-      if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-        setState(() {
-          _users = data.map((json) => User.fromJson(json)).toList();
-        });
-      } else {
-        throw Exception('Failed to load users');
-      }
-    } catch (e) {
-      // Handle error
-    }
-  }
-
-  Future<void> addUser(String name, String email) async {
-    const String baseUrl =
-        kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'name': name, 'email': email}),
-      );
-      if (response.statusCode == 201) {
-        fetchUsers(); // Refresh the list
-      } else {
-        throw Exception('Failed to add user');
-      }
-    } catch (e) {
-      // Handle error
-    }
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text(_titles[_selectedIndex]),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _users.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: _users.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_users[index].name),
-                        subtitle: Text(_users[index].email),
-                      );
-                    },
-                  ),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                TextField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    addUser(_nameController.text, _emailController.text);
-                    _nameController.clear();
-                    _emailController.clear();
-                  },
-                  child: const Text('Add User'),
-                ),
-              ],
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Cart',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: fetchUsers,
-        tooltip: 'Refresh',
-        child: const Icon(Icons.refresh),
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
