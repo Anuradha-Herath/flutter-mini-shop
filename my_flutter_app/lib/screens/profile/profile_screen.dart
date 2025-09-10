@@ -12,7 +12,7 @@ class ProfileScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundImage: NetworkImage('https://via.placeholder.com/100'),
+            child: Icon(Icons.person, size: 50),
           ),
           SizedBox(height: 16),
           Text(
